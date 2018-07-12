@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 boxsdk = {version = "*", extras = ["jwt"]}
 termcolor = "*"
+blessings = "*"
 
 [dev-packages]
 
