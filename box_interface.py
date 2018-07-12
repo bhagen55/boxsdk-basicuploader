@@ -20,10 +20,8 @@ def authenticate(appauth_file_path):
 	Private key is pulled from the .json file provided
 	by box and saved to ./keys/privkey
 
-	:param appauth_file_path:
-		file path, including full filename, to box .json authentication file
-	:returns:
-		authenticated box client object that can make calls to the box API
+	:param appauth_file_path: file path, including full filename, to box .json authentication file
+	:returns: authenticated box client object that can make calls to the box API
 	"""
 
 	appauth_file = Path(appauth_file_path)
@@ -68,12 +66,9 @@ def upload(dest_folder, file_path):
 	"""
 	Uploads a file to a destination folder
 
-	:param dest_folder:
-		folder object to upload file into
-	:param file_path:
-		pathlib object of file to upload
-	:returns:
-		uploaded file object or none if already in use
+	:param dest_folder: folder object to upload file into
+	:param file_path: pathlib object of file to upload
+	:returns: uploaded file object or none if already in use
 	"""
 	try:
 		uploaded_file = dest_folder.upload(file_path.parent, file_path.name, preflight_check = True)
@@ -95,10 +90,8 @@ def get_folder_contents(folder, limit):
 	Gets contents of a folder (nested folders and files)
 	Can provide a limit of how many results to return
 
-	:param folder:
-		folder object to get contents of
-	:param limit:
-		integer limit of how many results to return
+	:param folder: folder object to get contents of
+	:param limit: integer limit of how many results to return
 	"""
 	return(folder.get_items(limit, offset=0))
 
@@ -108,12 +101,9 @@ def create_folder(base_folder, new_folder_name):
 	Creates a folder within a given folder
 	If folder already exists, returns the first conflicting folder's info
 
-	:param base_folder:
-		folder object to make new folder inside of
-	:param new_folder_name:
-		string to name new folder
-	:returns:
-		folder object of new folder or conflicting folder object
+	:param base_folder: folder object to make new folder inside of
+	:param new_folder_name: string to name new folder
+	:returns: folder object of new folder or conflicting folder object
 	"""
 	try:
 		new_folder = base_folder.create_subfolder(new_folder_name)
@@ -127,8 +117,15 @@ def create_folder(base_folder, new_folder_name):
 			raise
 
 
-def delete_folder(id, force):
-	result = client.folder(id).delete(recursive=force)
+# TODO: Error checking of deleting a folder that doesn't exist or is trashed
+def delete_folder(folder, force):
+	"""
+	Deletes a folder
+
+	:param folder: folder object to be deleted
+	:param force: boolean to force deletion even if folder is not empty
+	"""
+	result =folder.delete(recursive=force)
 
 	if result:
 		logger.info("Item deleted successfully.")
@@ -137,11 +134,25 @@ def delete_folder(id, force):
 	return result
 
 
+# TODO: error checking of getting an ID that doesnt exist
 def get_folder(id):
+	"""
+	Gets the folder object attached to an ID number
+
+	:param id: ID number of desired folder
+	:returns: folder object
+	"""
 	return client.folder(id).get()
 
 
-def rename_folder(id, new_name):
+# TODO: error checking of changing to name that already exists, etc
+def rename_folder(folder, new_name):
+	"""
+	Renames a folder
+
+	:param folder: folder object to be renamed
+	:param new_name: string name to give to folder
+	"""
 	client.folder(id).rename(new_name)
 
 
@@ -157,9 +168,16 @@ def get_direct_download(file):
 	return file.get_shared_link_download_url(access="open", unshared_at=None)
 
 
-def delete_file(id):
+# TODO: What does this return???
+def delete_file(file):
+	"""
+	Deletes a file
+
+	:param file: file object to be deleted
+	:returns: unknown
+	"""
 	try:
-		result = delete(client.file(id).get())
+		result = file.delete()
 	except BoxAPIException as ex:
 		print(ex.message)
 		if ex.code == "trashed":
@@ -172,19 +190,22 @@ def delete_file(id):
 		return result
 
 
-def delete_file(id):
-	result = client.file(id).delete()
+# TODO: Error checking of renaming to something that already exists, illegal characters
+def rename_file(file, new_name):
+	"""
+	Renames a file
 
-	if result:
-		logger.info("Item deleted successfully.")
-	else:
-		logger.warning("There was a problem deleting item")
-	return result
+	:param file: file object to be renamed
+	:param new_name: string name to give file
+	"""
+	client.file(id).rename(new_name)
 
 
 def get_file(id):
+	"""
+	Gets the file object attached to an ID number
+
+	:param id: ID number of desired file
+	:returns: file object
+	""""
 	return client.file(id).get()
-
-
-def rename_file(id, new_name):
-	client.file(id).rename(new_name)
