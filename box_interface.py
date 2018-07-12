@@ -6,38 +6,44 @@ from pathlib import Path
 import logging
 
 # Logging setup
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
-# Base filepath for uploads
-upload_folder_path = "./upload"
-keys_folder_path = "./keys"
+# global client variable gets set at authentication
+# needed by basically all functions
+client = None
 
 
-# Create base folder structure
-def create_folders():
-	folder_paths = [upload_folder_path, keys_folder_path]
-	for path in folder_paths:
-		try:
-			 os.mkdir(path)
-		except OSError as ex:
-			if ex.errno == 17:
-				logger.warning('Folder at ' + path + ' already exists.')
-			else:
-				raise
+def authenticate(appauth_file_path):
+	"""
+	Get authorization info and authenticate
+	Private key is pulled from the .json file provided
+	by box and saved to ./keys/privkey
 
+	:param appauth_file_path:
+		file path, including full filename, to box .json authentication file
+	:returns:
+		authenticated box client object that can make calls to the box API
+	"""
 
-# Get authorization info and authenticate
-# private key is automatically pulled from the .json file provided
-# by box and saved to ./keys/privkey
-def authenticate():
-	with open('./keys/appauth.json') as f:
+	appauth_file = Path(appauth_file_path)
+
+	# Open provided appauth file
+	# TODO: Error checking here for filesystem errors
+	with open(appauth_file) as f:
 		auth_info = json.load(f)
 
-	with open('./keys/privkey','w') as f:
+	# Pull private key info from appauth file and save it as
+	# 'privkey' as the JWTAuth object wants it as a seperate file
+	#
+	# The file gets named by taking the name of the appauth file and adding
+	# "_privkey" to the end of it. So an appauth file named "boxauth.json"
+	# would generate a "boxauth_privkey" file.
+	# TODO: Error checking here for filesystem errors
+	with open(appauth_file.parent + "/" + appauth_file.stem + "_privkey" ,'w') as f:
 		f.write(auth_info["boxAppSettings"]["appAuth"]["privateKey"])
 
-	# Authentication info (using oauth)
+	# Authentication info
 	auth = boxsdk.JWTAuth(
 		client_id=auth_info["boxAppSettings"]["clientID"],
 		client_secret=auth_info["boxAppSettings"]["clientSecret"],
@@ -49,62 +55,106 @@ def authenticate():
 
 	# Authenticate
 	access_token = auth.authenticate_instance()
-	client = boxsdk.Client(auth)
+	boxclient = boxsdk.Client(auth)
 
 	# Get user info
-	me = client.user(user_id='me').get()
+	me = boxclient.user(user_id='me').get()
 	logger.info('User Login: ' + me['login'])
-	#print(colored("[Info] ", 'blue') + 'User Login: ' + me['login'])
 
-	return client
-
-
-def get_folder_contents(folder_id):
-	folder = get_folder(folder_id)
-	items = folder.get_items(limit=100, offset=0)
+	return boxclient
 
 
-# Creates a folder
-# Returns the folder ID
-def create_folder(base_folder_id, folder_name):
+def upload(dest_folder, file_path):
+	"""
+	Uploads a file to a destination folder
+
+	:param dest_folder:
+		folder object to upload file into
+	:param file_path:
+		pathlib object of file to upload
+	:returns:
+		uploaded file object or none if already in use
+	"""
 	try:
-		new_folder = client.folder(base_folder_id).create_subfolder(folder_name)
-		logger.info("Folder " + folder_name + " created successfully.")
-		return new_folder.object_id
+		uploaded_file = dest_folder.upload(file_path.parent, file_path.name, preflight_check = True)
+
+		logger.info("Item " + file_path.name + " uploaded successfully.")
+		return uploaded_file
+	except BoxAPIException as ex:
+		if ex.code == "item_name_in_use":
+			logger.warning("Item name " + file_path.name + " already in use.")
+			return None
+		else:
+			raise
+
+
+### Folder Operations ###
+
+def get_folder_contents(folder, limit):
+	"""
+	Gets contents of a folder (nested folders and files)
+	Can provide a limit of how many results to return
+
+	:param folder:
+		folder object to get contents of
+	:param limit:
+		integer limit of how many results to return
+	"""
+	return(folder.get_items(limit, offset=0))
+
+
+def create_folder(base_folder, new_folder_name):
+	"""
+	Creates a folder within a given folder
+	If folder already exists, returns the first conflicting folder's info
+
+	:param base_folder:
+		folder object to make new folder inside of
+	:param new_folder_name:
+		string to name new folder
+	:returns:
+		folder object of new folder or conflicting folder object
+	"""
+	try:
+		new_folder = base_folder.create_subfolder(new_folder_name)
+		logger.info("Folder " + new_folder_name + " created successfully.")
+		return new_folder
 	except BoxAPIException as ex:
 		if ex.code == "item_name_in_use":
 			logger.warning("Folder name " + folder_name + " already exists. Supplying first conflicting folder information.")
-			return ex.context_info['conflicts'][0]['id']
+			return client.folder(ex.context_info['conflicts'][0]['id']).get() # TODO: Test this
 		else:
 			raise
 
 
-# Uploads file to given folder ID
-# Returns dict with file ID and direct download URL
-# If file already exists, returns information of existing file
-def upload(dest_folder_id, file_name):
-	to_upload = Path(upload_folder + "/" + file_name)
-	dest_folder = client.folder(dest_folder_id).get()
+def delete_folder(id, force):
+	result = client.folder(id).delete(recursive=force)
 
-	file_info = {'id':'', 'url':''}
-
-	try:
-		uploaded_file = dest_folder.upload(to_upload, file_name, preflight_check = True)
-
-		direct_link = uploaded_file.get_shared_link_download_url()
-
-		logger.info("Item " + file_name + " uploaded successfully.")
-		return {'id':uploaded_file.object_id, 'url': direct_link}
-	except BoxAPIException as ex:
-		if ex.code == "item_name_in_use":
-			logger.warning("Item name " + file_name + " already in use. Supplying first conflicting item information.")
-			return {'id':ex.context_info['conflicts'][0]['id'], 'url':client.file(file_info['id']).get_shared_link_download_url()}
-		else:
-			raise
+	if result:
+		logger.info("Item deleted successfully.")
+	else:
+		logger.warning("There was a problem deleting item")
+	return result
 
 
-def delete_folder(id):
-	return delete(client.folder(id).get())
+def get_folder(id):
+	return client.folder(id).get()
+
+
+def rename_folder(id, new_name):
+	client.folder(id).rename(new_name)
+
+
+### File Operations ###
+
+def get_direct_download(file):
+	"""
+	Get a direct permalink to file with open access and no expiration
+
+	:param file: file object to upload
+	:returns: string of direct url download
+	"""
+	return file.get_shared_link_download_url(access="open", unshared_at=None)
 
 
 def delete_file(id):
@@ -122,26 +172,19 @@ def delete_file(id):
 		return result
 
 
-def delete(item):
-	result = item.delete()
+def delete_file(id):
+	result = client.file(id).delete()
+
 	if result:
-		logger.info("Item " + item.name + " deleted successfully.")
+		logger.info("Item deleted successfully.")
 	else:
-		logger.warning("There was a problem deleting item " + item.name)
+		logger.warning("There was a problem deleting item")
 	return result
 
 
-def get_folder_contents(id):
-	return client.folder(id).get_items(limit=100,offset=0)
+def get_file(id):
+	return client.file(id).get()
 
 
-def display_folder_contents(items):
-	for item in items:
-		print(item['name'])
-
-
-if __name__ == '__main__':
-	client = authenticate()
-
-	create_folders()
-	#display_folder_contents(get_folder_contents('0'))
+def rename_file(id, new_name):
+	client.file(id).rename(new_name)
