@@ -1,4 +1,4 @@
-import box_interface
+import boxinterface
 from blessings import Terminal
 from pathlib import Path
 import sys, signal
@@ -7,10 +7,11 @@ t = Terminal()
 
 current_folder = None
 folder_queue = []
-
+box_interface
 box = None
 
 # to handle sigint
+
 def signal_handler(sig, frame):
     print("\nExiting")
     sys.exit()

@@ -39,7 +39,8 @@ class box_interface:
 		# "_privkey" to the end of it. So an appauth file named "boxauth.json"
 		# would generate a "boxauth_privkey" file.
 		# TODO: Error checking here for filesystem errors
-		with open(str(appauth_file.parent) + "/" + str(appauth_file.stem) + "_privkey" ,'w') as f:
+		privkey_path = str(appauth_file.parent) + "/" + str(appauth_file.stem) + "_privkey"
+		with open(privkey_path ,'w') as f:
 			f.write(auth_info["boxAppSettings"]["appAuth"]["privateKey"])
 
 		# Authentication info
@@ -48,7 +49,7 @@ class box_interface:
 			client_secret=auth_info["boxAppSettings"]["clientSecret"],
 			enterprise_id=auth_info["enterpriseID"],
 			jwt_key_id=auth_info["boxAppSettings"]["appAuth"]["publicKeyID"],
-			rsa_private_key_file_sys_path="./keys/privkey",
+			rsa_private_key_file_sys_path=privkey_path,
 			rsa_private_key_passphrase=auth_info['boxAppSettings']['appAuth']['passphrase'].encode("ascii")
 		)
 
@@ -136,7 +137,7 @@ class box_interface:
 				return False
 			else:
 				raise
-				
+
 
 	# TODO: error checking of getting an ID that doesnt exist
 	def get_folder(self, id):
