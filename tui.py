@@ -1,13 +1,14 @@
-import box_interface as box
+import box_interface
 from blessings import Terminal
 from pathlib import Path
 import sys, signal
 
 t = Terminal()
 
-client = None
 current_folder = None
 folder_queue = []
+
+box = None
 
 # to handle sigint
 def signal_handler(sig, frame):
@@ -23,35 +24,35 @@ signal.signal(signal.SIGINT, signal_handler)
 #
 # Authenticates then launches the main menu
 def initmenu():
-    global client, current_folder
+    global client, current_folder, box
     print(t.clear)
     print(t.bold + t.underline + ('Box TUI\n\n') + t.normal)
 
-    print("Checking if folder structure exists...")
-    if not Path("./keys").is_dir():
-        print("keys directory not created!")
-        print("Creating keys directory...")
-        box.create_folder_structure()
-        print("Please place box api json authentication file in the keys directory\n"
-                "and name it appauth.json then re-run script")
-        sys.exit()
-    elif not Path("./upload").is_dir():
-        print("Creating upload folder...")
-        box.create_folder_structure()
+    # print("Checking if folder structure exists...")
+    # if not Path("./keys").is_dir():
+    #     print("keys directory not created!")
+    #     print("Creating keys directory...")
+    #     box.create_folder_structure()
+    #     print("Please place box api json authentication file in the keys directory\n"
+    #             "and name it appauth.json then re-run script")
+    #     sys.exit()
+    # elif not Path("./upload").is_dir():
+    #     print("Creating upload folder...")
+    #     box.create_folder_structure()
 
     print(t.clear)
     print("Authenticating...")
-    client = box.authenticate()
-    box.set_client(client)
+    box = box_interface.box_interface("./keys/appauth.json")
 
     current_folder = box.get_folder('0')
+    print(current_folder)
     folder_queue.append(current_folder)
     mainmenu()
 
 
 # Lists items in the current folder and actions to take on them
 def mainmenu():
-    global current_folder, folder_queue
+    global current_folder, folder_queue, box
     while True:
         print(t.clear)
 
@@ -60,7 +61,7 @@ def mainmenu():
             current_location = current_location + folder['name'] + '/'
         print(t.underline + "Current Location: " + current_location + t.normal)
 
-        items = box.get_folder_contents(current_folder['id'])
+        items = box.get_folder_contents(current_folder)
         i = 1
         for item in items:
             if item['type'] == "folder":
@@ -111,7 +112,7 @@ def filemenu(file):
 
     if choice is 'l':
         with t.location(0, t.height-1):
-            print(box.get_direct_download(file['id']))
+            print(box.get_direct_download(file))
     elif choice is 'd':
         deletemenu(file)
     elif choice is 'r':
@@ -126,10 +127,10 @@ def renamemenu(item):
         new_name = input("Input new name: ")
 
         if (item['type'] == "folder"):
-            box.rename_folder(item['id'], new_name)
+            box.rename_folder(item, new_name)
             changed_name = box.get_folder(item['id'])['name']
         elif (item['type'] == "file"):
-            box.rename_file(item['id'], new_name)
+            box.rename_file(item, new_name)
             changed_name = box.get_file(item['id'])['name']
 
         print("Name is now " + changed_name)
@@ -144,40 +145,37 @@ def deletemenu(item):
         print("Delete even if the folder is not empty?")
         choice = input("y or n: ")
         if choice == "y":
-            result = box.delete_folder(item['id'], True)
+            result = box.delete_folder(item, True)
         elif choice == "n":
-            result = box.delete_folder(item['id'], False)
+            result = box.delete_folder(item, False)
 
-        if result:
+        if result == True:
             folder_queue.pop()
             current_folder = folder_queue[len(folder_queue) -1]
     elif (item['type'] == "file"):
-        result = box.delete_file(item['id'])
-
-    if result:
-        print("Deleted successfully")
-    else:
-        print("Not able to delete!")
+        box.delete_file(item)
 
 
 def createfoldermenu(item):
     name = input("Name of new folder: ")
-    box.create_folder(item['id'], name)
+    box.create_folder(item, name)
 
 
 def uploadmenu(item):
     print(t.clear)
     print("Uploading to folder " + item['name'])
 
+    upload_folder_path = input("Enter path to upload folder")
+
     print("Contents of upload folder:\n")
-    p = Path(box.upload_folder_path)
+    p = Path(upload_folder_path)
     for f in p.iterdir():
         print(f.name)
     print()
 
-    file = input("Enter file name in upload folder: ")
+    file = Path(upload_folder_path + '/' + input("Enter file name in upload folder: "))
 
-    box.upload(item['id'], file)
+    box.upload(item, file)
 
 
 if __name__ == '__main__':
