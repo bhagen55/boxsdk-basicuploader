@@ -7,7 +7,8 @@ name = "pypi"
 boxsdk = {version = "*", extras = ["jwt"]}
 termcolor = "*"
 blessings = "*"
-pyforms = "*"
+pyforms = {path = "./gui/pyforms_repo/pyforms"}
+"pyqt5" = "*"
 
 [dev-packages]
 

@@ -1,4 +1,4 @@
-import boxinterface
+import BoxInterface
 from blessings import Terminal
 from pathlib import Path
 import sys, signal
@@ -7,7 +7,6 @@ t = Terminal()
 
 current_folder = None
 folder_queue = []
-box_interface
 box = None
 
 # to handle sigint
@@ -43,7 +42,7 @@ def initmenu():
 
     print(t.clear)
     print("Authenticating...")
-    box = box_interface.box_interface("./keys/appauth.json")
+    box = BoxInterface.BoxInterface("./keys/appauth.json")
 
     current_folder = box.get_folder('0')
     print(current_folder)
