@@ -48,7 +48,7 @@ def initmenu():
     print(current_folder)
     folder_queue.append(current_folder)
     mainmenu()
-
+    
 
 # Lists items in the current folder and actions to take on them
 def mainmenu():
