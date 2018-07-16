@@ -1,8 +1,3 @@
-"""
-Using QAbstractItemModel, creates a model useable in PyQT's tree view
-containing needed data to act as a file tree for Box.
-"""
-
 from PyQt5.QtCore import QAbstractItemModel, QFile, QIODevice, QModelIndex, Qt
 from PyQt5.QtWidgets import QApplication, QTreeView
 # TODO: Check imports for unused
@@ -39,4 +34,5 @@ class BoxTreeItem(object):
 
     def row(self):
         if self.parentFolder:
+            print(self.parentFolder.contents.index(self))
             return self.parentFolder.contents.index(self)

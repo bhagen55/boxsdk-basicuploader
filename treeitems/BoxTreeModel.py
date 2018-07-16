@@ -14,11 +14,13 @@ class BoxTreeModel(QAbstractItemModel):
         self.rootItem = BoxTreeItem.BoxTreeItem(self.box.get_folder('0'))
         self.buildFileStructure(self.box, self.rootItem)
 
+
     def columnCount(self, parent):
         if parent.isValid():
             return parent.internalPointer().columnCount()
         else:
             return self.rootItem.columnCount()
+
 
     def data(self, index, role):
         if not index.isValid():
@@ -31,17 +33,20 @@ class BoxTreeModel(QAbstractItemModel):
 
         return item.data[index.column()]
 
+
     def flags(self, index):
         if not index.isValid():
             return Qt.NoItemFlags
 
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
+
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.rootItem.data[section]
 
         return None
+
 
     def index(self, row, column, parent):
         if not self.hasIndex(row, column, parent):
@@ -58,7 +63,9 @@ class BoxTreeModel(QAbstractItemModel):
         else:
             return QModelIndex()
 
+
     def parent(self, index):
+        print("here")
         if not index.isValid():
             return QModelIndex()
 
@@ -69,8 +76,7 @@ class BoxTreeModel(QAbstractItemModel):
             return QModelIndex()
 
         return self.createIndex(parentItem.row(), 0, parentItem)
-        for file in self.box.get_folder_contents(self.box.get_folder('0')):
-            self.addFile(model, file)
+
 
     def rowCount(self, parent):
         if parent.column() > 0:
@@ -84,10 +90,16 @@ class BoxTreeModel(QAbstractItemModel):
         return parentItem.childCount()
 
 
-    def buildFileStructure(self, boxinterface, boxitem, parent=None):
-        for item in boxinterface.get_folder_contents(boxitem.boxItem):
-            new = BoxTreeItem.BoxTreeItem(item, boxitem)
-            boxitem.appendChild(new)
-            print("Adding " + new.boxItem['name'] + " to " + boxitem.boxItem['name'])
-            if item['type'] == "folder":
-                    self.buildFileStructure(boxinterface, new, boxitem)
+    def buildFileStructure(self, boxinterface, root):
+        test = BoxTreeItem.BoxTreeItem(boxinterface.get_file('305104366338'), root)
+        testfolder = BoxTreeItem.BoxTreeItem(boxinterface.get_folder('51339713516'), root)
+        test2 = BoxTreeItem.BoxTreeItem(boxinterface.get_file('305088703300'), testfolder)
+
+        root.appendChild(testfolder)
+        # for item in boxinterface.get_folder_contents(root.boxItem):
+        #     new = BoxTreeItem.BoxTreeItem(item, root)
+        #     root.appendChild(new)
+        #     print("Adding " + new.boxItem['name'] + " to " + root.boxItem['name'])
+        #     if item['type'] == "folder":
+        #             self.buildFileStructure(boxinterface, new)
+        #     print(root.boxItem['name'] + ": " + str(new.contents))
