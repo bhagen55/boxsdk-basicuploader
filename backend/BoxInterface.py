@@ -84,6 +84,16 @@ class BoxInterface:
 			else:
 				raise
 
+	# TODO: Error checking of renaming to something that already exists, illegal characters
+	def rename(self, item, new_name):
+		"""
+		Renames an item
+
+		:param item: item object to be renamed
+		:param new_name: string name to give item
+		"""
+		print(item.rename(new_name))
+
 
 	### Folder Operations ###
 
@@ -150,17 +160,6 @@ class BoxInterface:
 		return self.client.folder(id).get()
 
 
-	# TODO: error checking of changing to name that already exists, etc
-	def rename_folder(self, folder, new_name):
-		"""
-		Renames a folder
-
-		:param folder: folder object to be renamed
-		:param new_name: string name to give to folder
-		"""
-		folder.rename(new_name)
-
-
 	### File Operations ###
 
 	def get_direct_download(self, file):
@@ -193,17 +192,6 @@ class BoxInterface:
 				raise
 		else:
 			return result
-
-
-	# TODO: Error checking of renaming to something that already exists, illegal characters
-	def rename_file(self, file, new_name):
-		"""
-		Renames a file
-
-		:param file: file object to be renamed
-		:param new_name: string name to give file
-		"""
-		file.rename(new_name)
 
 
 	def get_file(self, id):
