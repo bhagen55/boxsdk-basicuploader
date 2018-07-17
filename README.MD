@@ -1,8 +1,10 @@
 To compile (Tested on Windows)
-1. Install pipenv
-	pip install pipenv
-2. Create a new pipenv project
-	pipenv --python 3.6
-3. Enter pipenv
-	pipenv shell
-1. Install pyinstaller (pip install pyinstaller)
+1. Clone repo and enter it
+2. Install pipenv
+	-'-pip install pipenv'
+3. Prepare pipenv
+	-'pipenv sync'
+4. Enter pipenv
+	-'pipenv shell'
+
+	

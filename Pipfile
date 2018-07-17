@@ -5,11 +5,10 @@ name = "pypi"
 
 [packages]
 boxsdk = {version = "*", extras = ["jwt"]}
-termcolor = "*"
-blessings = "*"
 "pyqt5" = "*"
 pyinstaller = "*"
 "pypiwin32" = "*"
+"pyqt5.sip" = "*"
 
 [dev-packages]
 
