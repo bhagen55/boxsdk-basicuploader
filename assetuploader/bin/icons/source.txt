@@ -1,2 +1,0 @@
-folder.png: https://commons.wikimedia.org/wiki/File:Folder_1_icon-72a7cf.svg
-upload.png: https://commons.wikimedia.org/wiki/File:Upload_icon_-_Font_Awesome_-_Red.svg
