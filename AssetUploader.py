@@ -58,10 +58,11 @@ class AssetUploader(QMainWindow):
 
         self.treeView.setModel(self.model)
 
-        # Add all to main layout
-        # mainLayout = QVBoxLayout()
-        # mainLayout.addWidget(self.treeView)
-        # self.setLayout(mainLayout)
+        #Add all to main layout
+        mainWidget = QWidget(self)
+        mainLayout = QVBoxLayout(mainWidget)
+        self.setCentralWidget(mainWidget)
+        mainLayout.addWidget(self.treeView)
 
         # Communication/action
         self.treeView.customContextMenuRequested.connect(self.contextMenu)
