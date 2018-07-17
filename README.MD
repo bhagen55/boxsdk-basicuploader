@@ -1,4 +1,4 @@
-#To Compile: (Tested on Windows)
+# To Compile: (Tested on Windows)
 1. Clone repo and enter it
 2. Install pipenv
 	`pip install pipenv`
